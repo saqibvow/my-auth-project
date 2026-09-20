@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from pydantic import BaseModel,EmailStr, model_validator
 from pwdlib import PasswordHash
+from sqlmodel import Field, Session, SQLModel, create_engine, select
+
 
 app = FastAPI()
 
