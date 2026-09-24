@@ -11,7 +11,7 @@ class User_Registration(BaseModel):
     full_name: str
     email_addr: EmailStr
     password: str
-    conf_password: str
+    conf_password: str = Field(exclude=True)
     @model_validator(mode='after')
     def check_pass_match(self):
         if self.password != self.conf_password:
@@ -19,17 +19,17 @@ class User_Registration(BaseModel):
         return self
 
 class Hero_Db(SQLModel, table=True):
-    id: int | None = Field(default=None , primary_key=True)
+    id: int | None = Field(default=None, primary_key=True)
     full_name: str | None = Field(index=True)
     email_addr: str | None = Field(index=True)
-    password: str
+    password: str 
 
 
-class User_Response(BaseModel):
+# class User_Response(BaseModel):
 
-    full_name: str
+#     full_name: str
 
-    email_addr: EmailStr
+#     email_addr: EmailStr
 
 mysql_url = "mysql+pymysql://root:iamsaqib__1@localhost:3306/my_auth_db"
 engine = create_engine(mysql_url, echo=True)
@@ -49,11 +49,11 @@ def on_startup():
 
 
 @app.post("/heroes/")
-def create_hero(hero: Hero_Db, session: SessionDep) -> User_Response:
+def create_hero(hero:Hero_Db, session: SessionDep):
     db_user = Hero_Db(
     full_name=hero.full_name,          
     email_addr=hero.email_addr,   
-    password=hero.password, 
+    password=hero.password,
 )
     session.add(db_user)
     session.commit()
