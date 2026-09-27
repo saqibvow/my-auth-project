@@ -3,9 +3,11 @@ from pydantic import BaseModel,EmailStr, model_validator
 from pwdlib import PasswordHash
 from sqlmodel import Field, Session, SQLModel, create_engine, select 
 from typing import Annotated
+from pydantic_core import PydanticCustomError
 
 
 app = FastAPI()
+password_hasher = PasswordHash.recommended()
 
 class User_Registration(BaseModel):
     full_name: str
@@ -15,7 +17,12 @@ class User_Registration(BaseModel):
     @model_validator(mode='after')
     def check_pass_match(self):
         if self.password != self.conf_password:
-            raise ValueError('Password  do not match')
+            print("PASSWORD MISMATCH !!!")
+            raise PydanticCustomError(
+                'password mismatch',
+                'write  again your password',
+            )
+        
         return self
 
 class Hero_Db(SQLModel, table=True):
@@ -25,11 +32,6 @@ class Hero_Db(SQLModel, table=True):
     password: str 
 
 
-# class User_Response(BaseModel):
-
-#     full_name: str
-
-#     email_addr: EmailStr
 
 mysql_url = "mysql+pymysql://root:iamsaqib__1@localhost:3306/my_auth_db"
 engine = create_engine(mysql_url, echo=True)
@@ -49,12 +51,11 @@ def on_startup():
 
 
 @app.post("/heroes/")
-def create_hero(hero:Hero_Db, session: SessionDep):
-    db_user = Hero_Db(
-    full_name=hero.full_name,          
-    email_addr=hero.email_addr,   
-    password=hero.password,
-)
+def create_hero(hero:User_Registration, session: SessionDep):
+    filtered_data = hero.model_dump(exclude={"conf_password"})
+    filtered_data["password"] = password_hasher.hash(filtered_data["password"])
+    db_user = Hero_Db(**filtered_data)
+    print(filtered_data["password"])
     session.add(db_user)
     session.commit()
     session.refresh(db_user)
